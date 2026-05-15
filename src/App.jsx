@@ -157,8 +157,9 @@ function generateMapSVGString(project, dpi) {
 }
 
 function shapeToSVGStr(obj, scl, tableH) {
-  const dash = obj.dashed ? `stroke-dasharray="${4*(obj.strokeWidth||2)} ${4*(obj.strokeWidth||2)}"` : "";
-  const sw = obj.strokeWidth||2;
+  const swBase = obj.strokeWidth||2;
+  const sw = swBase * scl / 10; // scale stroke width proportionally
+  const dash = obj.dashed ? `stroke-dasharray="${4*sw} ${4*sw}"` : "";
   const toX = x=>x*scl; const toY = y=>(tableH-y)*scl;
   switch(obj.type) {
     case "line": return `<line x1="${toX(obj.x1)}" y1="${toY(obj.y1)}" x2="${toX(obj.x2)}" y2="${toY(obj.y2)}" stroke="${obj.strokeColor}" stroke-width="${sw}" ${dash}/>`;
