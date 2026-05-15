@@ -169,7 +169,7 @@ function shapeToSVGStr(obj, scl, tableH) {
       const distLabel=`${Math.round(dist*10)/10}"`;const labelFs=scl*0.8;
       const angle=Math.atan2(toY(obj.y2)-toY(obj.y1),toX(obj.x2)-toX(obj.x1));
       const offsetDist=sw*4;const labelX=midX-Math.sin(angle)*offsetDist;const labelY=midY+Math.cos(angle)*offsetDist;
-      let r=`<defs><marker id="${aid}_s" markerWidth="6" markerHeight="4" refX="0" refY="2" orient="auto-start-reverse"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker><marker id="${aid}_e" markerWidth="6" markerHeight="4" refX="0" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker></defs><line x1="${toX(obj.x1)}" y1="${toY(obj.y1)}" x2="${toX(obj.x2)}" y2="${toY(obj.y2)}" stroke="${obj.strokeColor}" stroke-width="${sw}" ${dash} marker-start="url(#${aid}_s)" marker-end="url(#${aid}_e)"/>`;
+      let r=`<defs><marker id="${aid}_s" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto-start-reverse"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker><marker id="${aid}_e" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker></defs><line x1="${toX(obj.x1)}" y1="${toY(obj.y1)}" x2="${toX(obj.x2)}" y2="${toY(obj.y2)}" stroke="${obj.strokeColor}" stroke-width="${sw}" ${dash} marker-start="url(#${aid}_s)" marker-end="url(#${aid}_e)"/>`;
       if(obj.showDistance) r+=`<text x="${labelX}" y="${labelY}" fill="${obj.strokeColor}" font-size="${labelFs}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-weight="bold">${distLabel}</text>`;
       return r;
     }
@@ -351,7 +351,7 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
 
   // ── Preview / PDF Export ──
   function renderPreviewHTML() {
-    let html = `<div style="font-family:Georgia,serif;max-width:170mm;margin:0 auto;padding:20mm 20mm;color:#1a1a1a;line-height:1.35;">`;
+    let html = `<div style="font-family:Georgia,serif;max-width:190mm;margin:0 auto;padding:10mm 10mm;color:#1a1a1a;line-height:1.35;">`;
     if (scenario.title) html += `<h1 style="text-align:center;font-size:20pt;margin-bottom:2mm;border-bottom:3px solid #333;padding-bottom:2mm;">${scenario.title}</h1>`;
     if (scenario.narrative) html += `<div style="margin-bottom:3mm;font-size:10pt;text-align:justify;">${scenario.narrative}</div>`;
     if (scenario.mapId && linkedMap) {
@@ -592,8 +592,8 @@ function MapEditor({ projects, setProjects, projectId, onBack }) {
         const offsetDist=forExport?sw*4:(sw+6)/zoom;const labelX=midX-Math.sin(angle)*offsetDist;const labelY=midY+Math.cos(angle)*offsetDist;
         return <g key={obj.id} style={selStroke}>
           <defs>
-            <marker id={`${aid}_s`} markerWidth={ms} markerHeight={mh} refX={0} refY={mh/2} orient="auto-start-reverse" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
-            <marker id={`${aid}_e`} markerWidth={ms} markerHeight={mh} refX={0} refY={mh/2} orient="auto" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
+            <marker id={`${aid}_s`} markerWidth={ms} markerHeight={mh} refX={ms} refY={mh/2} orient="auto-start-reverse" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
+            <marker id={`${aid}_e`} markerWidth={ms} markerHeight={mh} refX={ms} refY={mh/2} orient="auto" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
           </defs>
           <line x1={toX(obj.x1)} y1={toY(obj.y1)} x2={toX(obj.x2)} y2={toY(obj.y2)} stroke={obj.strokeColor} strokeWidth={swScaled} strokeDasharray={dash} markerStart={`url(#${aid}_s)`} markerEnd={`url(#${aid}_e)`}/>
           {obj.showDistance&&<text x={labelX} y={labelY} fill={obj.strokeColor} fontSize={labelFs} textAnchor="middle" dominantBaseline="middle" fontFamily="sans-serif" fontWeight="bold">{distLabel}</text>}
