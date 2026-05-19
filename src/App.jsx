@@ -464,7 +464,21 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
           <button onClick={exportPDF} style={{padding:"4px 12px",background:"var(--accent)",color:"#fff",border:"none",borderRadius:4,fontWeight:700,fontSize:12,cursor:"pointer"}}>Exporter PDF</button>
         </div>
         <div ref={previewContainerRef} style={{flex:1,overflow:"auto",background:"#555",display:"flex",justifyContent:"center",alignItems:"flex-start",padding:20}}>
-          <div style={{transform:`scale(${previewScale})`,transformOrigin:"top center",background:"#fff",width:794,minHeight:1123,boxShadow:"0 4px 20px rgba(0,0,0,0.5)"}} dangerouslySetInnerHTML={{__html:renderPreviewHTML()}}/>
+          <div style={{transform:`scale(${previewScale})`,transformOrigin:"top center"}}>
+            <div style={{
+              width:794, minHeight:1123,
+              backgroundImage:`repeating-linear-gradient(to bottom, #fff 0px, #fff 1123px, transparent 1123px, transparent 1143px)`,
+              backgroundSize:"100% 1143px",
+              boxShadow:"4px 4px 12px rgba(0,0,0,0.4)",
+              position:"relative",
+            }}>
+              {/* Page separator lines */}
+              <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,pointerEvents:"none",
+                backgroundImage:`repeating-linear-gradient(to bottom, transparent 0px, transparent 1122px, #333 1122px, #333 1123px, transparent 1123px, transparent 1143px)`,
+              }}/>
+              <div style={{position:"relative"}} dangerouslySetInnerHTML={{__html:renderPreviewHTML()}}/>
+            </div>
+          </div>
         </div>
       </div>
     );
