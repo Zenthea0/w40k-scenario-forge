@@ -361,6 +361,10 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
     if (!html) return "";
     return `<div style="color:#1a1a1a !important;">${html}</div>`;
   }
+  function forceBlackInline(html) {
+    if (!html) return "";
+    return `<span style="color:#1a1a1a !important;">${html}</span>`;
+  }
   function renderPreviewHTML() {
     let html = `<div style="font-family:Georgia,serif;max-width:190mm;margin:0 auto;padding:10mm 10mm;color:#1a1a1a;line-height:1.35;">`;
     if (scenario.title) html += `<h1 style="text-align:center;font-size:20pt;margin-bottom:2mm;border-bottom:3px solid #333;padding-bottom:2mm;">${scenario.title}</h1>`;
@@ -379,7 +383,7 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
       let s = `<h2 style="font-size:14pt;margin:3mm 0 1.5mm;color:#333;border-bottom:2px solid #999;padding-bottom:1mm;">${title}</h2>`;
       for (const it of filtered) {
         s += `<div style="margin-bottom:1.5mm;font-size:10pt;color:#1a1a1a;"><strong style="font-size:11pt;">${it.name}</strong>`;
-        if (it.description) s += ` : ${forceBlack(it.description)}`;
+        if (it.description) s += ` : ${forceBlackInline(it.description)}`;
         s += `</div>`;
       }
       return s;
