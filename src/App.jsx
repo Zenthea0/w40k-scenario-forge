@@ -366,7 +366,7 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
     return `<span style="color:#1a1a1a !important;">${html}</span>`;
   }
   function renderPreviewHTML() {
-    let html = `<div style="font-family:Georgia,serif;max-width:190mm;margin:0 auto;padding:10mm 10mm;color:#1a1a1a;line-height:1.35;">`;
+    let html = `<div style="font-family:Georgia,serif;max-width:190mm;margin:0 auto;padding:15mm 10mm;color:#1a1a1a;line-height:1.35;">`;
     if (scenario.title) html += `<h1 style="text-align:center;font-size:20pt;margin-bottom:2mm;border-bottom:3px solid #333;padding-bottom:2mm;">${scenario.title}</h1>`;
     if (scenario.narrative) html += `<div style="margin-bottom:3mm;font-size:10pt;text-align:justify;color:#1a1a1a;">${forceBlack(scenario.narrative)}</div>`;
     if (scenario.mapId && linkedMap) {
@@ -412,7 +412,7 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
     const content = renderPreviewHTML();
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${scenario.name}</title><style>@page{size:A4 portrait;margin:0;}body{margin:0;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body>${content}</body></html>`);
+    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${scenario.name}</title><style>@page{size:A4 portrait;margin:15mm 10mm;}body{margin:0;font-family:Georgia,serif;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body>${content}</body></html>`);
     printWindow.document.close();
     setTimeout(()=>{printWindow.print();},500);
   }
@@ -467,17 +467,9 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
           <div style={{transform:`scale(${previewScale})`,transformOrigin:"top center"}}>
             <div style={{
               width:794, minHeight:1123,
-              backgroundImage:`repeating-linear-gradient(to bottom, #fff 0px, #fff 1123px, transparent 1123px, transparent 1143px)`,
-              backgroundSize:"100% 1143px",
-              boxShadow:"4px 4px 12px rgba(0,0,0,0.4)",
-              position:"relative",
-            }}>
-              {/* Page separator lines */}
-              <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,pointerEvents:"none",
-                backgroundImage:`repeating-linear-gradient(to bottom, transparent 0px, transparent 1122px, #333 1122px, #333 1123px, transparent 1123px, transparent 1143px)`,
-              }}/>
-              <div style={{position:"relative"}} dangerouslySetInnerHTML={{__html:renderPreviewHTML()}}/>
-            </div>
+              background:"#fff",
+              boxShadow:"0 4px 20px rgba(0,0,0,0.5)",
+            }} dangerouslySetInnerHTML={{__html:renderPreviewHTML()}}/>
           </div>
         </div>
       </div>
