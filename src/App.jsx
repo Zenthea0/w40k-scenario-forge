@@ -420,20 +420,36 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
   // ── Preview overlay ──
   const previewContainerRef = useRef(null);
   const [previewScale, setPreviewScale] = useState(1);
+  const [manualZoom, setManualZoom] = useState(null); // null = auto-fit
+
   useEffect(() => {
     if (!showPreview || !previewContainerRef.current) return;
     function calcScale() {
       const container = previewContainerRef.current;
       if (!container) return;
       const cw = container.clientWidth - 40;
-      const pageW = 794; // 210mm at 96dpi
+      const pageW = 794;
       const s = Math.min(cw / pageW, 1);
-      setPreviewScale(s);
+      if (manualZoom === null) setPreviewScale(s);
     }
     calcScale();
     window.addEventListener("resize", calcScale);
     return () => window.removeEventListener("resize", calcScale);
-  }, [showPreview]);
+  }, [showPreview, manualZoom]);
+
+  function zoomPreview(delta) {
+    const newScale = Math.max(0.2, Math.min(3, previewScale + delta));
+    setPreviewScale(newScale);
+    setManualZoom(newScale);
+  }
+  function resetPreviewZoom() {
+    setManualZoom(null);
+    const container = previewContainerRef.current;
+    if (container) {
+      const cw = container.clientWidth - 40;
+      setPreviewScale(Math.min(cw / 794, 1));
+    }
+  }
 
   if (showPreview) {
     return (
@@ -441,6 +457,10 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
         <div style={{display:"flex",alignItems:"center",padding:"6px 12px",background:"var(--bg-panel)",borderBottom:"1px solid var(--border)",gap:8}}>
           <button onClick={()=>setShowPreview(false)} style={{background:"none",border:"none",color:"var(--accent)",fontSize:18,cursor:"pointer"}}>←</button>
           <span style={{fontWeight:700,fontSize:14,flex:1}}>Aperçu — {scenario.name}</span>
+          <button onClick={()=>zoomPreview(-0.1)} style={{width:28,height:28,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:4,color:"var(--text-secondary)",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+          <span style={{fontSize:11,color:"var(--text-tertiary)",background:"var(--bg-input)",padding:"3px 8px",borderRadius:4,fontFamily:"monospace",minWidth:45,textAlign:"center"}}>{Math.round(previewScale*100)}%</span>
+          <button onClick={()=>zoomPreview(0.1)} style={{width:28,height:28,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:4,color:"var(--text-secondary)",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+          <button onClick={resetPreviewZoom} style={{padding:"4px 8px",background:"var(--accent-secondary)",color:"#fff",border:"none",borderRadius:4,fontWeight:700,fontSize:11,cursor:"pointer"}}>Ajuster</button>
           <button onClick={exportPDF} style={{padding:"4px 12px",background:"var(--accent)",color:"#fff",border:"none",borderRadius:4,fontWeight:700,fontSize:12,cursor:"pointer"}}>Exporter PDF</button>
         </div>
         <div ref={previewContainerRef} style={{flex:1,overflow:"auto",background:"#555",display:"flex",justifyContent:"center",alignItems:"flex-start",padding:20}}>
