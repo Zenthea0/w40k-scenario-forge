@@ -95,13 +95,26 @@ function RichTextEditor({ value, onChange, placeholder }) {
   function handlePaste(e) {
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
-    // Escape HTML and convert newlines to <br>
-    const safe = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\n/g, '<br>');
-    document.execCommand('insertHTML', false, safe);
+    if (!text) return;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    // Convert newlines to <br> nodes
+    const frag = document.createDocumentFragment();
+    const lines = text.split('\n');
+    lines.forEach((line, i) => {
+      frag.appendChild(document.createTextNode(line));
+      if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
+    });
+    range.insertNode(frag);
+    // Move cursor to end of inserted content
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    // Trigger update
+    isInternalChange.current = true;
+    onChange(ref.current.innerHTML);
   }
   function exec(cmd, val) { document.execCommand(cmd, false, val); ref.current?.focus(); }
 
