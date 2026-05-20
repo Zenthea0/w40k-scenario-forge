@@ -94,9 +94,14 @@ function RichTextEditor({ value, onChange, placeholder }) {
   }
   function handlePaste(e) {
     e.preventDefault();
-    // Get plain text only to avoid color/style issues
     const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
+    // Escape HTML and convert newlines to <br>
+    const safe = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+    document.execCommand('insertHTML', false, safe);
   }
   function exec(cmd, val) { document.execCommand(cmd, false, val); ref.current?.focus(); }
 
