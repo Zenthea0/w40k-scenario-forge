@@ -92,29 +92,22 @@ function RichTextEditor({ value, onChange, placeholder }) {
     isInternalChange.current = true;
     onChange(ref.current.innerHTML);
   }
-  function handlePaste(e) {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    if (!text) return;
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    // Convert newlines to <br> nodes
-    const frag = document.createDocumentFragment();
-    const lines = text.split('\n');
-    lines.forEach((line, i) => {
-      frag.appendChild(document.createTextNode(line));
-      if (i < lines.length - 1) frag.appendChild(document.createElement('br'));
-    });
-    range.insertNode(frag);
-    // Move cursor to end of inserted content
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    // Trigger update
-    isInternalChange.current = true;
-    onChange(ref.current.innerHTML);
+  function handlePaste() {
+    // Let browser handle paste natively, then clean up colors after a short delay
+    setTimeout(() => {
+      if (ref.current) {
+        ref.current.querySelectorAll('*').forEach(el => {
+          el.style.color = '';
+          el.style.backgroundColor = '';
+          el.style.background = '';
+          el.style.fontFamily = '';
+          el.style.fontSize = '';
+        });
+        ref.current.querySelectorAll('font[color]').forEach(el => el.removeAttribute('color'));
+        isInternalChange.current = true;
+        onChange(ref.current.innerHTML);
+      }
+    }, 10);
   }
   function exec(cmd, val) { document.execCommand(cmd, false, val); ref.current?.focus(); }
 
