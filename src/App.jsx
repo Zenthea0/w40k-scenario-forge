@@ -19,7 +19,7 @@ const uid = () => `obj_${_uid++}`;
 
 const shapeDefaults = {
   line: () => ({ type: "line", name: "Droite", x1: 0, y1: 0, x2: 10, y2: 0, strokeColor: "#ff0000", strokeWidth: 2, dashed: false }),
-  arrow: () => ({ type: "arrow", name: "Flèche", x1: 0, y1: 0, x2: 10, y2: 0, strokeColor: "#ff0000", strokeWidth: 2, dashed: false, showDistance: false }),
+  arrow: () => ({ type: "arrow", name: "Flèche", x1: 0, y1: 0, x2: 10, y2: 0, strokeColor: "#ff0000", strokeWidth: 2, dashed: false, showDistance: false, distFontSize: 25 }),
   rect: () => ({ type: "rect", name: "Rectangle", x1: 0, y1: 0, x2: 10, y2: 10, strokeColor: "#3366ff", strokeWidth: 2, dashed: false, fillColor: "#3366ff", fillOpacity: 0.3 }),
   triangle: () => ({ type: "triangle", name: "Triangle", x1: 0, y1: 0, x2: 5, y2: 10, x3: 10, y3: 0, strokeColor: "#33cc33", strokeWidth: 2, dashed: false, fillColor: "#33cc33", fillOpacity: 0.3 }),
   circle: () => ({ type: "circle", name: "Cercle", cx: 10, cy: 10, r: 5, strokeColor: "#ffcc00", strokeWidth: 2, dashed: false, fillColor: "#ffcc00", fillOpacity: 0.3 }),
@@ -184,7 +184,7 @@ function shapeToSVGStr(obj, scl, tableH) {
       const aid=`ah_${obj.id}`;
       const midX=(toX(obj.x1)+toX(obj.x2))/2;const midY=(toY(obj.y1)+toY(obj.y2))/2;
       const dist=Math.sqrt((obj.x2-obj.x1)**2+(obj.y2-obj.y1)**2);
-      const distLabel=`${Math.round(dist*10)/10}"`;const labelFs=scl*0.8;
+      const distLabel=`${Math.round(dist*10)/10}"`;const labelFs=scl*(obj.distFontSize||25)/10;
       const angle=Math.atan2(toY(obj.y2)-toY(obj.y1),toX(obj.x2)-toX(obj.x1));
       const offsetDist=sw*4;const labelX=midX-Math.sin(angle)*offsetDist;const labelY=midY+Math.cos(angle)*offsetDist;
       let r=`<defs><marker id="${aid}_s" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto-start-reverse" markerUnits="strokeWidth"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker><marker id="${aid}_e" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto" markerUnits="strokeWidth"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker></defs><line x1="${toX(obj.x1)}" y1="${toY(obj.y1)}" x2="${toX(obj.x2)}" y2="${toY(obj.y2)}" stroke="${obj.strokeColor}" stroke-width="${sw}" ${dash} marker-start="url(#${aid}_s)" marker-end="url(#${aid}_e)"/>`;
@@ -669,7 +669,7 @@ function MapEditor({ projects, setProjects, projectId, onBack }) {
         const aid=`ah_${obj.id}_${sw}`;const ms=6;const mh=4;
         const midX=(toX(obj.x1)+toX(obj.x2))/2;const midY=(toY(obj.y1)+toY(obj.y2))/2;
         const dist=Math.sqrt((obj.x2-obj.x1)**2+(obj.y2-obj.y1)**2);const distLabel=`${Math.round(dist*10)/10}"`;
-        const labelFs=forExport?s*0.8:25/zoom;
+        const labelFs=forExport?s*(obj.distFontSize||25)/10:(obj.distFontSize||25)/zoom;
         const angle=Math.atan2(toY(obj.y2)-toY(obj.y1),toX(obj.x2)-toX(obj.x1));
         const offsetDist=forExport?sw*4:(sw+6)/zoom;const labelX=midX-Math.sin(angle)*offsetDist;const labelY=midY+Math.cos(angle)*offsetDist;
         return <g key={obj.id} style={selStroke}>
@@ -782,6 +782,11 @@ function MapEditor({ projects, setProjects, projectId, onBack }) {
                   <NumInput label="Épaiss." value={selectedObj.strokeWidth||2} onChange={v=>updateObject(selectedId,{strokeWidth:v})} step={0.5} min={0.5} max={20} unit="px"/>
                   <label style={{fontSize:11,display:"flex",alignItems:"center",gap:4,color:"var(--text-secondary)",marginBottom:4}}><input type="checkbox" checked={selectedObj.dashed||false} onChange={e=>updateObject(selectedId,{dashed:e.target.checked})}/> Pointillé</label>
                   {selectedObj.type==="arrow"&&<label style={{fontSize:11,display:"flex",alignItems:"center",gap:4,color:"var(--text-secondary)",marginBottom:4}}><input type="checkbox" checked={selectedObj.showDistance||false} onChange={e=>updateObject(selectedId,{showDistance:e.target.checked})}/> Afficher distance</label>}
+                  {selectedObj.type==="arrow"&&selectedObj.showDistance&&<div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
+                    <NumInput label="Taille" value={selectedObj.distFontSize||25} onChange={v=>updateObject(selectedId,{distFontSize:v})} step={1} min={4} max={100} unit="pt"/>
+                    <button onClick={()=>updateObject(selectedId,{distFontSize:Math.max(4,(selectedObj.distFontSize||25)-1)})} style={{width:22,height:22,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:3,color:"var(--text-secondary)",cursor:"pointer",fontSize:14,padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                    <button onClick={()=>updateObject(selectedId,{distFontSize:Math.min(100,(selectedObj.distFontSize||25)+1)})} style={{width:22,height:22,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:3,color:"var(--text-secondary)",cursor:"pointer",fontSize:14,padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                  </div>}
                 </>}
                 {(selectedObj.type==="rect"||selectedObj.type==="triangle"||selectedObj.type==="circle"||selectedObj.type==="objective")&&<>
                   <ColorPicker label="Rempliss." color={selectedObj.fillColor||"#3366ff"} onChange={v=>updateObject(selectedId,{fillColor:v})}/>
