@@ -92,23 +92,6 @@ function RichTextEditor({ value, onChange, placeholder }) {
     isInternalChange.current = true;
     onChange(ref.current.innerHTML);
   }
-  function handlePaste() {
-    // Let browser handle paste natively, then clean up colors after a short delay
-    setTimeout(() => {
-      if (ref.current) {
-        ref.current.querySelectorAll('*').forEach(el => {
-          el.style.color = '';
-          el.style.backgroundColor = '';
-          el.style.background = '';
-          el.style.fontFamily = '';
-          el.style.fontSize = '';
-        });
-        ref.current.querySelectorAll('font[color]').forEach(el => el.removeAttribute('color'));
-        isInternalChange.current = true;
-        onChange(ref.current.innerHTML);
-      }
-    }, 10);
-  }
   function exec(cmd, val) { document.execCommand(cmd, false, val); ref.current?.focus(); }
 
   const btnStyle = { background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:3,color:"var(--text-secondary)",cursor:"pointer",fontSize:12,padding:"2px 6px",minWidth:24 };
@@ -123,7 +106,7 @@ function RichTextEditor({ value, onChange, placeholder }) {
         <button onClick={()=>exec("insertUnorderedList")} style={btnStyle} title="Liste à puces">• Liste</button>
         <button onClick={()=>exec("insertOrderedList")} style={btnStyle} title="Liste numérotée">1. Liste</button>
       </div>
-      <div ref={ref} contentEditable suppressContentEditableWarning onInput={handleInput} onPaste={handlePaste}
+      <div ref={ref} contentEditable suppressContentEditableWarning onInput={handleInput}
         data-placeholder={placeholder}
         style={{ minHeight:60,padding:"6px 8px",fontSize:12,color:"var(--text-primary)",background:"var(--bg-input)",outline:"none",lineHeight:1.5 }}/>
     </div>
@@ -145,7 +128,7 @@ function StructuredList({ items, onChange, labelName="Nom", labelDesc="Descripti
       {items.map((it,i)=>(
         <div key={it.id} style={{ background:"rgba(0,0,0,0.15)",borderRadius:4,padding:6,marginBottom:4,border:"1px solid var(--border)" }}>
           <div style={{ display:"flex",alignItems:"center",gap:4,marginBottom:4 }}>
-            <LocalInput type="text" value={it.name} onChange={v=>update(it.id,{name:v})} placeholder={labelName}
+            <input type="text" value={it.name} onChange={e=>update(it.id,{name:e.target.value})} placeholder={labelName}
               style={{ flex:1,fontSize:12,padding:"3px 6px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:3,color:"var(--text-primary)",fontWeight:700 }}/>
             <button onClick={()=>move(it.id,-1)} style={{ background:"none",border:"none",color:"var(--text-secondary)",cursor:"pointer",fontSize:11 }}>▲</button>
             <button onClick={()=>move(it.id,1)} style={{ background:"none",border:"none",color:"var(--text-secondary)",cursor:"pointer",fontSize:11 }}>▼</button>
@@ -174,9 +157,8 @@ function generateMapSVGString(project, dpi) {
 }
 
 function shapeToSVGStr(obj, scl, tableH) {
-  const swBase = obj.strokeWidth||2;
-  const sw = swBase * scl / 10; // scale stroke width proportionally
-  const dash = obj.dashed ? `stroke-dasharray="${4*sw} ${4*sw}"` : "";
+  const dash = obj.dashed ? `stroke-dasharray="${4*(obj.strokeWidth||2)} ${4*(obj.strokeWidth||2)}"` : "";
+  const sw = obj.strokeWidth||2;
   const toX = x=>x*scl; const toY = y=>(tableH-y)*scl;
   switch(obj.type) {
     case "line": return `<line x1="${toX(obj.x1)}" y1="${toY(obj.y1)}" x2="${toX(obj.x2)}" y2="${toY(obj.y2)}" stroke="${obj.strokeColor}" stroke-width="${sw}" ${dash}/>`;
@@ -187,7 +169,7 @@ function shapeToSVGStr(obj, scl, tableH) {
       const distLabel=`${Math.round(dist*10)/10}"`;const labelFs=scl*0.8;
       const angle=Math.atan2(toY(obj.y2)-toY(obj.y1),toX(obj.x2)-toX(obj.x1));
       const offsetDist=sw*4;const labelX=midX-Math.sin(angle)*offsetDist;const labelY=midY+Math.cos(angle)*offsetDist;
-      let r=`<defs><marker id="${aid}_s" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto-start-reverse" markerUnits="strokeWidth"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker><marker id="${aid}_e" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto" markerUnits="strokeWidth"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker></defs><line x1="${toX(obj.x1)}" y1="${toY(obj.y1)}" x2="${toX(obj.x2)}" y2="${toY(obj.y2)}" stroke="${obj.strokeColor}" stroke-width="${sw}" ${dash} marker-start="url(#${aid}_s)" marker-end="url(#${aid}_e)"/>`;
+      let r=`<defs><marker id="${aid}_s" markerWidth="6" markerHeight="4" refX="0" refY="2" orient="auto-start-reverse"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker><marker id="${aid}_e" markerWidth="6" markerHeight="4" refX="0" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="${obj.strokeColor}"/></marker></defs><line x1="${toX(obj.x1)}" y1="${toY(obj.y1)}" x2="${toX(obj.x2)}" y2="${toY(obj.y2)}" stroke="${obj.strokeColor}" stroke-width="${sw}" ${dash} marker-start="url(#${aid}_s)" marker-end="url(#${aid}_e)"/>`;
       if(obj.showDistance) r+=`<text x="${labelX}" y="${labelY}" fill="${obj.strokeColor}" font-size="${labelFs}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-weight="bold">${distLabel}</text>`;
       return r;
     }
@@ -335,29 +317,6 @@ export default function App() {
 // ══════════════════════════════════════
 // ══  SCENARIO EDITOR COMPONENT  ══
 // ══════════════════════════════════════
-// ── Self-managed text input that only syncs on blur ──
-function LocalInput({ value, onChange, ...props }) {
-  const [val, setVal] = useState(value);
-  useEffect(() => setVal(value), [value]);
-  return <input {...props} value={val} onChange={e=>setVal(e.target.value)} onBlur={()=>onChange(val)} />;
-}
-
-// ── Self-managed select that syncs immediately ──
-function LocalSelect({ value, onChange, children, ...props }) {
-  return <select {...props} value={value} onChange={e=>onChange(e.target.value)}>{children}</select>;
-}
-
-// ── Section wrapper (defined outside ScenarioEditor to avoid re-creation) ──
-function Section({ title, children, show=true }) {
-  if(!show) return null;
-  return (
-    <div style={{marginBottom:16}}>
-      <h3 style={{fontSize:13,color:"var(--highlight)",marginBottom:6,borderBottom:"1px solid var(--border)",paddingBottom:4}}>{title}</h3>
-      {children}
-    </div>
-  );
-}
-
 function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateScenario, onBack, generateMapSVGString }) {
   const [showPreview, setShowPreview] = useState(false);
   const scenario = scenarios.find(s=>s.id===scenarioId);
@@ -367,54 +326,42 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
 
   const linkedMap = projects.find(p=>p.id===scenario.mapId);
 
+  // Section component
+  function Section({ title, children, show=true }) {
+    if(!show) return null;
+    return (
+      <div style={{marginBottom:16}}>
+        <h3 style={{fontSize:13,color:"var(--highlight)",marginBottom:6,borderBottom:"1px solid var(--border)",paddingBottom:4}}>{title}</h3>
+        {children}
+      </div>
+    );
+  }
+
   // ── Preview / PDF Export ──
-  function forceBlack(html) {
-    if (!html) return "";
-    return `<div style="color:#1a1a1a !important;">${html}</div>`;
-  }
-  function forceBlackInline(html) {
-    if (!html) return "";
-    return `<span style="color:#1a1a1a !important;">${html}</span>`;
-  }
   function renderPreviewHTML() {
-    let html = `<div style="font-family:Georgia,serif;max-width:190mm;margin:0 auto;padding:15mm 10mm;color:#1a1a1a;line-height:1.35;">`;
-    if (scenario.title) html += `<h1 style="text-align:center;font-size:20pt;margin-bottom:2mm;border-bottom:3px solid #333;padding-bottom:2mm;">${scenario.title}</h1>`;
-    if (scenario.narrative) html += `<div style="margin-bottom:3mm;font-size:10pt;text-align:justify;color:#1a1a1a;">${forceBlack(scenario.narrative)}</div>`;
+    let html = `<div style="font-family:Georgia,serif;max-width:170mm;margin:0 auto;padding:20mm 20mm;color:#1a1a1a;line-height:1.6;">`;
+    if (scenario.title) html += `<h1 style="text-align:center;font-size:24pt;margin-bottom:4mm;border-bottom:2px solid #333;padding-bottom:3mm;">${scenario.title}</h1>`;
+    if (scenario.narrative) html += `<div style="margin-bottom:6mm;font-size:11pt;text-align:justify;">${scenario.narrative}</div>`;
     if (scenario.mapId && linkedMap) {
-      const svgStr = generateMapSVGString(linkedMap, 150)
-        .replace(/ width="[^"]*"/, '')
-        .replace(/ height="[^"]*"/, '')
-        .replace('<svg ', '<svg style="max-width:100%;height:auto;display:block;" ');
-      html += `<div style="text-align:center;margin:3mm 0;overflow:hidden;">${svgStr}</div>`;
+      const svgStr = generateMapSVGString(linkedMap, 150);
+      html += `<div style="text-align:center;margin:6mm 0;">${svgStr}</div>`;
     }
-    function renderRules(title, items) {
+    function renderItems(title, items) {
       if (!items || items.length === 0) return "";
       const filtered = items.filter(it=>it.name||it.description);
       if (filtered.length===0) return "";
-      let s = `<h2 style="font-size:14pt;margin:3mm 0 1.5mm;color:#333;border-bottom:2px solid #999;padding-bottom:1mm;">${title}</h2>`;
+      let s = `<h2 style="font-size:14pt;margin:5mm 0 3mm;color:#333;border-bottom:1px solid #999;padding-bottom:2mm;">${title}</h2>`;
       for (const it of filtered) {
-        s += `<div style="margin-bottom:1.5mm;font-size:10pt;color:#1a1a1a;"><strong style="font-size:11pt;">${it.name}</strong>`;
-        if (it.description) s += ` : ${forceBlackInline(it.description)}`;
+        s += `<div style="margin-bottom:3mm;"><strong style="font-size:11pt;">${it.name}</strong>`;
+        if (it.description) s += `<div style="font-size:10pt;margin-top:1mm;padding-left:4mm;">${it.description}</div>`;
         s += `</div>`;
       }
       return s;
     }
-    function renderObjectives(title, items) {
-      if (!items || items.length === 0) return "";
-      const filtered = items.filter(it=>it.name||it.description);
-      if (filtered.length===0) return "";
-      let s = `<h2 style="font-size:14pt;margin:3mm 0 1.5mm;color:#333;border-bottom:2px solid #999;padding-bottom:1mm;">${title}</h2>`;
-      for (const it of filtered) {
-        s += `<div style="margin-bottom:1.5mm;color:#1a1a1a;"><strong style="font-size:11pt;">${it.name}</strong>`;
-        if (it.description) s += `<div style="font-size:10pt;margin-top:0.5mm;padding-left:4mm;color:#1a1a1a;">${forceBlack(it.description)}</div>`;
-        s += `</div>`;
-      }
-      return s;
-    }
-    html += renderRules("Règles Spéciales", scenario.specialRules);
-    html += renderObjectives("Objectifs Primaires", scenario.primaryObjectives);
-    html += renderObjectives("Objectifs Secondaires", scenario.secondaryObjectives);
-    html += renderObjectives("Objectifs Tertiaires", scenario.tertiaryObjectives);
+    html += renderItems("Règles Spéciales", scenario.specialRules);
+    html += renderItems("Objectifs Primaires", scenario.primaryObjectives);
+    html += renderItems("Objectifs Secondaires", scenario.secondaryObjectives);
+    html += renderItems("Objectifs Tertiaires", scenario.tertiaryObjectives);
     html += `</div>`;
     return html;
   }
@@ -423,65 +370,22 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
     const content = renderPreviewHTML();
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${scenario.name}</title><style>@page{size:A4 portrait;margin:15mm 10mm;}body{margin:0;font-family:Georgia,serif;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body>${content}</body></html>`);
+    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${scenario.name}</title><style>@page{size:A4 portrait;margin:0;}body{margin:0;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body>${content}</body></html>`);
     printWindow.document.close();
     setTimeout(()=>{printWindow.print();},500);
   }
 
   // ── Preview overlay ──
-  const previewContainerRef = useRef(null);
-  const [previewScale, setPreviewScale] = useState(1);
-  const [manualZoom, setManualZoom] = useState(null); // null = auto-fit
-
-  useEffect(() => {
-    if (!showPreview || !previewContainerRef.current) return;
-    function calcScale() {
-      const container = previewContainerRef.current;
-      if (!container) return;
-      const cw = container.clientWidth - 40;
-      const pageW = 794;
-      const s = Math.min(cw / pageW, 1);
-      if (manualZoom === null) setPreviewScale(s);
-    }
-    calcScale();
-    window.addEventListener("resize", calcScale);
-    return () => window.removeEventListener("resize", calcScale);
-  }, [showPreview, manualZoom]);
-
-  function zoomPreview(delta) {
-    const newScale = Math.max(0.2, Math.min(3, previewScale + delta));
-    setPreviewScale(newScale);
-    setManualZoom(newScale);
-  }
-  function resetPreviewZoom() {
-    setManualZoom(null);
-    const container = previewContainerRef.current;
-    if (container) {
-      const cw = container.clientWidth - 40;
-      setPreviewScale(Math.min(cw / 794, 1));
-    }
-  }
-
   if (showPreview) {
     return (
       <div style={{...cssVars,background:"var(--bg-dark)",height:"100vh",fontFamily:"'Segoe UI',system-ui,sans-serif",color:"var(--text-primary)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <div style={{display:"flex",alignItems:"center",padding:"6px 12px",background:"var(--bg-panel)",borderBottom:"1px solid var(--border)",gap:8}}>
           <button onClick={()=>setShowPreview(false)} style={{background:"none",border:"none",color:"var(--accent)",fontSize:18,cursor:"pointer"}}>←</button>
           <span style={{fontWeight:700,fontSize:14,flex:1}}>Aperçu — {scenario.name}</span>
-          <button onClick={()=>zoomPreview(-0.1)} style={{width:28,height:28,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:4,color:"var(--text-secondary)",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-          <span style={{fontSize:11,color:"var(--text-tertiary)",background:"var(--bg-input)",padding:"3px 8px",borderRadius:4,fontFamily:"monospace",minWidth:45,textAlign:"center"}}>{Math.round(previewScale*100)}%</span>
-          <button onClick={()=>zoomPreview(0.1)} style={{width:28,height:28,background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:4,color:"var(--text-secondary)",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-          <button onClick={resetPreviewZoom} style={{padding:"4px 8px",background:"var(--accent-secondary)",color:"#fff",border:"none",borderRadius:4,fontWeight:700,fontSize:11,cursor:"pointer"}}>Ajuster</button>
           <button onClick={exportPDF} style={{padding:"4px 12px",background:"var(--accent)",color:"#fff",border:"none",borderRadius:4,fontWeight:700,fontSize:12,cursor:"pointer"}}>Exporter PDF</button>
         </div>
-        <div ref={previewContainerRef} style={{flex:1,overflow:"auto",background:"#555",display:"flex",justifyContent:"center",alignItems:"flex-start",padding:20}}>
-          <div style={{transform:`scale(${previewScale})`,transformOrigin:"top center"}}>
-            <div style={{
-              width:794, minHeight:1123,
-              background:"#fff",
-              boxShadow:"0 4px 20px rgba(0,0,0,0.5)",
-            }} dangerouslySetInnerHTML={{__html:renderPreviewHTML()}}/>
-          </div>
+        <div style={{flex:1,overflow:"auto",background:"#666",display:"flex",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",width:"210mm",minHeight:"297mm",boxShadow:"0 4px 20px rgba(0,0,0,0.5)"}} dangerouslySetInnerHTML={{__html:renderPreviewHTML()}}/>
         </div>
       </div>
     );
@@ -502,7 +406,7 @@ function ScenarioEditor({ scenarios, setScenarios, projects, scenarioId, updateS
       <div style={{flex:1,overflow:"auto",padding:16,maxWidth:700,margin:"0 auto",width:"100%"}}>
         {/* Title */}
         <Section title="Titre du scénario">
-          <LocalInput type="text" value={scenario.title} onChange={v=>upd({title:v})} placeholder="Nom du scénario..."
+          <input type="text" value={scenario.title} onChange={e=>upd({title:e.target.value})} placeholder="Nom du scénario..."
             style={{width:"100%",fontSize:16,padding:"6px 10px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:4,color:"var(--text-primary)",fontWeight:700}}/>
         </Section>
 
@@ -646,8 +550,8 @@ function MapEditor({ projects, setProjects, projectId, onBack }) {
         const offsetDist=forExport?sw*4:(sw+6)/zoom;const labelX=midX-Math.sin(angle)*offsetDist;const labelY=midY+Math.cos(angle)*offsetDist;
         return <g key={obj.id} style={selStroke}>
           <defs>
-            <marker id={`${aid}_s`} markerWidth={ms} markerHeight={mh} refX={ms} refY={mh/2} orient="auto-start-reverse" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
-            <marker id={`${aid}_e`} markerWidth={ms} markerHeight={mh} refX={ms} refY={mh/2} orient="auto" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
+            <marker id={`${aid}_s`} markerWidth={ms} markerHeight={mh} refX={0} refY={mh/2} orient="auto-start-reverse" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
+            <marker id={`${aid}_e`} markerWidth={ms} markerHeight={mh} refX={0} refY={mh/2} orient="auto" markerUnits="strokeWidth"><polygon points={`0 0,${ms} ${mh/2},0 ${mh}`} fill={obj.strokeColor}/></marker>
           </defs>
           <line x1={toX(obj.x1)} y1={toY(obj.y1)} x2={toX(obj.x2)} y2={toY(obj.y2)} stroke={obj.strokeColor} strokeWidth={swScaled} strokeDasharray={dash} markerStart={`url(#${aid}_s)`} markerEnd={`url(#${aid}_e)`}/>
           {obj.showDistance&&<text x={labelX} y={labelY} fill={obj.strokeColor} fontSize={labelFs} textAnchor="middle" dominantBaseline="middle" fontFamily="sans-serif" fontWeight="bold">{distLabel}</text>}
